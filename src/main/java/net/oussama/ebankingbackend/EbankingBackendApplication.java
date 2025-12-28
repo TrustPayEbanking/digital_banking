@@ -1,14 +1,12 @@
 package net.oussama.ebankingbackend;
 
-import net.oussama.ebankingbackend.entites.AccountOperation;
-import net.oussama.ebankingbackend.entites.CurrentAccount;
-import net.oussama.ebankingbackend.entites.Customer;
-import net.oussama.ebankingbackend.entites.SavingAccount;
+import net.oussama.ebankingbackend.entites.*;
 import net.oussama.ebankingbackend.enums.AccountStatus;
 import net.oussama.ebankingbackend.enums.OperationType;
 import net.oussama.ebankingbackend.repositroy.BankAccountOperationRepositroy;
 import net.oussama.ebankingbackend.repositroy.BankAccountRepositroy;
 import net.oussama.ebankingbackend.repositroy.CustomersRepositroy;
+import net.oussama.ebankingbackend.services.BankServices;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,6 +25,13 @@ public class EbankingBackendApplication {
         SpringApplication.run(EbankingBackendApplication.class, args);
     }
     @Bean
+    CommandLineRunner commandLineRunner(BankServices bankServices) {
+        return args -> {
+         bankServices.consulter();
+        };
+    }
+
+  //  @Bean
     CommandLineRunner init(CustomersRepositroy customersRepositroy,
                            BankAccountRepositroy bankaccountrepositroy,
                            BankAccountOperationRepositroy aBankaccountrepositroy
@@ -64,17 +69,17 @@ public class EbankingBackendApplication {
                     .findAll()
                     .stream()
                     .flatMap(account -> IntStream.range(0,10).mapToObj(i->{
-                        AccountOperation accountOperation = new AccountOperation();
-                        accountOperation.setAccount(account);
-                        accountOperation.setAmount(Math.random()*900);
-                        accountOperation.setDate(new Date());
-                        accountOperation.setType(Math.random()>0.5?OperationType.CREDIT:OperationType.DEBIT);
-                                        System.out.println("iteraoin"+i+accountOperation);
-                        return accountOperation;
-                    }
-                    )
+                                        AccountOperation accountOperation = new AccountOperation();
+                                        accountOperation.setAccount(account);
+                                        accountOperation.setAmount(Math.random()*900);
+                                        accountOperation.setDate(new Date());
+                                        accountOperation.setType(Math.random()>0.5?OperationType.CREDIT:OperationType.DEBIT);
+                                        return accountOperation;
+                                    }
+                            )
                     ).toList();
             aBankaccountrepositroy.saveAll(operations);
+
         };
     }
 
