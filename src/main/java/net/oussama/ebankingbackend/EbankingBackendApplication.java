@@ -3,6 +3,7 @@ package net.oussama.ebankingbackend;
 import net.oussama.ebankingbackend.Execption.BalanceSoldeinsuffisantExecption;
 import net.oussama.ebankingbackend.Execption.BankAccountNotfoundExecption;
 import net.oussama.ebankingbackend.Execption.CustomerNotFondExecption;
+import net.oussama.ebankingbackend.dtos.CustomerDto;
 import net.oussama.ebankingbackend.entites.*;
 import net.oussama.ebankingbackend.enums.AccountStatus;
 import net.oussama.ebankingbackend.enums.OperationType;
@@ -32,7 +33,7 @@ public class EbankingBackendApplication {
     CommandLineRunner commandLineRunner(BankAccountsServiceImpl service) {
         return args -> {
             Stream.of("Hasan","Imane","Mohamed").forEach(name ->{
-                        Customer customer=new Customer();
+                        CustomerDto customer=new CustomerDto();
                         customer.setName(name);
                         customer.setEmail(name+"@gmail.com");
                         service.saveCustomer(customer);

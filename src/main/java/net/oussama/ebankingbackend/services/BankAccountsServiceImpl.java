@@ -32,9 +32,11 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
     private BankAccountOperationRepositroy bankAccountOperationRepositro;
     private BankAccountMapperImpl datoMapper;
     @Override
-    public Customer saveCustomer(Customer customer) {
+    public CustomerDto saveCustomer(CustomerDto customerDto) {
         log.info("Saving customer");
-        return ((Customer)customersRepositroy.save(customer));
+        Customer customer=datoMapper.fromCustomerDto(customerDto);
+        Customer savedCustomer=customersRepositroy.save(customer);
+        return datoMapper.fromCustomer(savedCustomer);
     }
 
     @Override
@@ -119,5 +121,21 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
      @Override
     public List<BankAccount> bankAccountslist(){
         return bankAccountRepositroy.findAll();
+    }
+    @Override
+    public  CustomerDto get_Customers(Long customerId) throws CustomerNotFondExecption {
+         return datoMapper.fromCustomer(customersRepositroy.findById(customerId).orElseThrow(()-> new CustomerNotFondExecption("customer not found")));
+    }
+    @Override
+    public CustomerDto updateCustomer(CustomerDto customerDto) {
+        log.info("Saving customer");
+        Customer customer=datoMapper.fromCustomerDto(customerDto);
+        Customer savedCustomer=customersRepositroy.save(customer);
+        return datoMapper.fromCustomer(savedCustomer);
+    }
+    @Override
+    public void deletecutomers(Long id){
+        log.info("Deleting customer");
+        customersRepositroy.deleteById(id);
     }
 }
