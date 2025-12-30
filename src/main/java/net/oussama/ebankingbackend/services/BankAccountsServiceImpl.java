@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.oussama.ebankingbackend.Execption.BalanceSoldeinsuffisantExecption;
 import net.oussama.ebankingbackend.Execption.BankAccountNotfoundExecption;
 import net.oussama.ebankingbackend.Execption.CustomerNotFondExecption;
-import net.oussama.ebankingbackend.dtos.CustomerDto;
+import net.oussama.ebankingbackend.dtos.*;
 import net.oussama.ebankingbackend.entites.*;
 import net.oussama.ebankingbackend.enums.OperationType;
 import net.oussama.ebankingbackend.mappers.BankAccountMapperImpl;
@@ -14,6 +14,8 @@ import net.oussama.ebankingbackend.repositroy.BankAccountOperationRepositroy;
 import net.oussama.ebankingbackend.repositroy.BankAccountRepositroy;
 import net.oussama.ebankingbackend.repositroy.CustomersRepositroy;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -29,7 +31,7 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
 
     private CustomersRepositroy customersRepositroy;
     private BankAccountRepositroy bankAccountRepositroy;
-    private BankAccountOperationRepositroy bankAccountOperationRepositro;
+    private BankAccountOperationRepositroy bankAccountOperationrepositro;
     private BankAccountMapperImpl datoMapper;
     @Override
     public CustomerDto saveCustomer(CustomerDto customerDto) {
@@ -40,7 +42,7 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
     }
 
     @Override
-    public CurrentAccount saveBankCurrentAccount(double SoldeIntial, double overDraft, Long CustomerId) throws  CustomerNotFondExecption {
+    public CurrentBankAccountDTO saveBankCurrentAccount(double SoldeIntial, double overDraft, Long CustomerId) throws  CustomerNotFondExecption {
         Customer customer = customersRepositroy.findById(CustomerId).orElseThrow(()->new CustomerNotFondExecption("Customer not found"));
 
         log.info("Saving bank account");
@@ -50,12 +52,12 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
         currentAccount.setBalance(SoldeIntial);
         currentAccount.setOverdraft(overDraft);
         currentAccount.setCustomer(customer);
-
-        return ((CurrentAccount)bankAccountRepositroy.save(currentAccount));
+         CurrentAccount currentAccount1=bankAccountRepositroy.save(currentAccount);
+        return datoMapper.fromcurrentbankaccounr(currentAccount1);
     }
 
     @Override
-    public SavingAccount saveBankSavingAccount(double SoldeIntial, double interestRate, Long CustomerId) throws CustomerNotFondExecption {
+    public SavingBankAccountDTO saveBankSavingAccount(double SoldeIntial, double interestRate, Long CustomerId) throws CustomerNotFondExecption {
         Customer customer =customersRepositroy.findById(CustomerId).orElseThrow(()->new CustomerNotFondExecption("Customer not found"));
         log.info("Saving bank account");
         SavingAccount savingAccount=new SavingAccount();
@@ -64,7 +66,8 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
         savingAccount.setBalance(SoldeIntial);
         savingAccount.setInterestRate(interestRate);
         savingAccount.setCustomer(customer);
-        return ((SavingAccount)bankAccountRepositroy.save(savingAccount));
+        SavingAccount savingAccount1=bankAccountRepositroy.save(savingAccount);
+        return datoMapper.fromsavingbankaccount(savingAccount1);
     }
     //la defference entre toList et Collect.tolist si le 1 cree une list
     //no modifable et la 2 si de cree une liste modfiable
@@ -78,13 +81,18 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
     }
 
     @Override
-    public BankAccount getBankAccount(String Id) throws BankAccountNotfoundExecption {
-        return bankAccountRepositroy.findById(Id).orElseThrow(()->new BankAccountNotfoundExecption("erreur leur de trouve le banke account"));
+    public BankAccountDto getBankAccount(String Id) throws BankAccountNotfoundExecption {
+        BankAccount bankAccount =bankAccountRepositroy.findById(Id).orElseThrow(()->new BankAccountNotfoundExecption("erreur leur de trouve le banke account"));
+        if(bankAccount instanceof CurrentAccount){
+            return datoMapper.fromcurrentbankaccounr((CurrentAccount)bankAccount);
+        }else {
+           return datoMapper.fromsavingbankaccount((SavingAccount)bankAccount);
+        }
     }
 
     @Override
     public void debitAccount(String acountId, double amount, String description) throws BankAccountNotfoundExecption ,BalanceSoldeinsuffisantExecption{
-        BankAccount bankAccount=getBankAccount(acountId);
+        BankAccount bankAccount =bankAccountRepositroy.findById(acountId).orElseThrow(()->new BankAccountNotfoundExecption("erreur leur de trouve le banke account"));
         if(bankAccount.getBalance()<amount){
             throw new BalanceSoldeinsuffisantExecption("solde no insuffusant pour retire l'argent");
         }
@@ -94,21 +102,21 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
         accountOperation.setDescription(description);
         accountOperation.setDate(new Date());
         accountOperation.setAccount(bankAccount);
-        bankAccountOperationRepositro.save(accountOperation);
+        bankAccountOperationrepositro.save(accountOperation);
         bankAccount.setBalance(bankAccount.getBalance()-amount);
         bankAccountRepositroy.save(bankAccount);
     }
 
     @Override
     public void creditAccount(String acountId, double amount, String description) throws BankAccountNotfoundExecption {
-        BankAccount bankAccount=getBankAccount(acountId);
+        BankAccount bankAccount =bankAccountRepositroy.findById(acountId).orElseThrow(()->new BankAccountNotfoundExecption("erreur leur de trouve le banke account"));
         AccountOperation accountOperation= new  AccountOperation();
         accountOperation.setType(OperationType.CREDIT);
         accountOperation.setAmount(amount);
         accountOperation.setDescription(description);
         accountOperation.setDate(new Date());
         accountOperation.setAccount(bankAccount);
-        bankAccountOperationRepositro.save(accountOperation);
+        bankAccountOperationrepositro.save(accountOperation);
         bankAccount.setBalance(bankAccount.getBalance()+amount);
         bankAccountRepositroy.save(bankAccount);
     }
@@ -119,8 +127,16 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
        creditAccount(acountIdSource,amount,"transfere");
     }
      @Override
-    public List<BankAccount> bankAccountslist(){
-        return bankAccountRepositroy.findAll();
+    public List<BankAccountDto> bankAccountslist(){
+        List<BankAccount> bankAccounts= bankAccountRepositroy.findAll();
+        List<BankAccountDto> banckaccount=bankAccounts.stream().map(banking ->{
+               if(banking instanceof CurrentAccount){
+                   return datoMapper.fromcurrentbankaccounr((CurrentAccount)banking);
+               }else {
+                   return datoMapper.fromsavingbankaccount((SavingAccount)banking);
+               }
+        }).toList();
+        return banckaccount;
     }
     @Override
     public  CustomerDto get_Customers(Long customerId) throws CustomerNotFondExecption {
@@ -137,5 +153,23 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
     public void deletecutomers(Long id){
         log.info("Deleting customer");
         customersRepositroy.deleteById(id);
+    }
+    @Override
+    public List<AccountOperationDto> accountoperationslist(String account){
+     List<AccountOperation> accounto= bankAccountOperationrepositro.findByAccountId(account);
+     return accounto.stream().map(op->datoMapper.fromAccountOperation(op)).collect(Collectors.toList());
+    }
+    @Override
+    public AccountHistroyDto historyaccount(String id, int page, int size) throws BankAccountNotfoundExecption{
+        BankAccount bankAccount=bankAccountRepositroy.findById(id).orElseThrow(()-> new BankAccountNotfoundExecption("account not found"));
+        Page<AccountOperation> account=bankAccountOperationrepositro.findByAccountId(id, PageRequest.of(page, size));
+        AccountHistroyDto accountHistroyDto=new AccountHistroyDto();
+        accountHistroyDto.setOperations(account.getContent().stream().map(op->datoMapper.fromAccountOperation(op)).collect(Collectors.toList()));
+        accountHistroyDto.setAccountId(bankAccount.getId());
+        accountHistroyDto.setBalance(bankAccount.getBalance());
+        accountHistroyDto.setPageSize(size);
+        accountHistroyDto.setTotalPage(account.getTotalPages());
+        accountHistroyDto.setCurrentPage(page);
+        return accountHistroyDto;
     }
 }
