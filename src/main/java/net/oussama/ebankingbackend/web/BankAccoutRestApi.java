@@ -31,7 +31,6 @@ public class BankAccoutRestApi {
     @GetMapping("/accountoperation/{id}/pageOperation")
     public AccountHistroyDto getAccountHistory(@PathVariable String id, @RequestParam(name = "page",defaultValue = "0") int page,@RequestParam(name = "size",defaultValue = "6") int size) throws BankAccountNotfoundExecption {
         return bankAccountServices.historyaccount(id,page,size);
-
-
     }
+
 }

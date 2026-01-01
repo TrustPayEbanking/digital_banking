@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.oussama.ebankingbackend.Execption.CustomerNotFondExecption;
 import net.oussama.ebankingbackend.dtos.CustomerDto;
 import net.oussama.ebankingbackend.entites.Customer;
+import net.oussama.ebankingbackend.repositroy.CustomersRepositroy;
 import net.oussama.ebankingbackend.services.BanKAccountServices;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Slf4j
 public class CustomerRestApi {
+    private final CustomersRepositroy customersRepositroy;
     private BanKAccountServices bankAccountServices;
      @GetMapping("/customers")
     public List<CustomerDto> customers(){
@@ -36,5 +38,9 @@ public class CustomerRestApi {
     @DeleteMapping("/customers/{id}")
     public void deleteCustomer(@PathVariable Long id) throws CustomerNotFondExecption {
         bankAccountServices.deletecutomers(id);
+    }
+    @GetMapping("/Customers/search")
+    public List<CustomerDto> searchCustomer(@RequestParam(name = "keyword",defaultValue = "") String keyword){
+          return bankAccountServices.search("%"+keyword+"%");
     }
 }

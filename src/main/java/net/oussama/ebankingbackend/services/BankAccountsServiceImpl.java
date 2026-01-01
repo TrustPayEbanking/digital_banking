@@ -172,4 +172,14 @@ public class BankAccountsServiceImpl implements BanKAccountServices{
         accountHistroyDto.setCurrentPage(page);
         return accountHistroyDto;
     }
+    @Override
+    public List<CustomerDto> search(String name){
+        List<Customer> customer=customersRepositroy.serachcusomers( name);
+        List<CustomerDto> cutomerdto= customer.stream().map(
+                c->{
+                    return  datoMapper.fromCustomer(c);
+                }
+        ).toList();
+        return cutomerdto;
+    }
 }

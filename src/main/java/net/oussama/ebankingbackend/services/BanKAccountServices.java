@@ -27,4 +27,6 @@ public interface BanKAccountServices {
     List<AccountOperationDto> accountoperationslist(String id);
 
     AccountHistroyDto historyaccount(String id, int page, int size) throws BankAccountNotfoundExecption;
+
+    List<CustomerDto> search(String keyword);
 }
